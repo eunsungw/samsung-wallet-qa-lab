@@ -1,0 +1,21 @@
+{
+  "name": "wallet-qa-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A non-production digital wallet QA lab for Samsung Wallet interview preparation",
+  "scripts": {
+    "dev": "npm run build && node scripts/server.mjs",
+    "build": "tsc -p tsconfig.json && node scripts/copy-static.mjs",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:android": "node tests/appium/wallet.android.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "typescript": "^5.9.3",
+    "webdriverio": "^9.18.0"
+  },
+  "engines": { "node": ">=20" }
+}
