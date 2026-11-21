@@ -91,3 +91,20 @@ Further reading: [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md), [`docs/INTERVIEW_PREP
 
 ## Privacy and accuracy
 All sample card digits and transactions are fabricated. Don't add real cards or financial data, secrets, partner certificates or unredacted user logs. This educational demo makes **no claim** that Samsung uses Playwright, Appium, Kotlin or the stack listed here internally; the uploaded job description does not identify a specific QA toolchain.
+
+
+## Native Android QA lab extension
+
+Open **`docs/ANDROID_QA_LAB.md`** for the full Windows Android Studio emulator setup, Kotlin/Compose test app, ADB/Logcat, Appium native and browser automation, Postman local mock API and supervised physical Galaxy testing scope. The test matrix and simulated defect template are in **`docs/ANDROID_TEST_CASES.md`**.
+
+Quick start (Node 20+):
+
+```bash
+npm install
+npm test             # Web payment logic + local API contract tests
+npm run dev:api      # Separate local mock HTTP API at 127.0.0.1:4300
+```
+
+Import `postman/Wallet_QA_Lab.postman_collection.json` into Postman. Open `android/` in Android Studio; its Kotlin sample and instrumentation suite run on a **generic Android Emulator** (requires local SDK). Appium smoke tests live at `tests/appium/native.wallet.android.mjs`; run `npm run test:android:native` after installing the app and starting Appium.
+
+**Never interpret simulator tests as real Samsung Wallet certification.** The native app and local API are independent educational fixtures; the real wallet requires supported Samsung hardware and approved partner resources for privileged testing.

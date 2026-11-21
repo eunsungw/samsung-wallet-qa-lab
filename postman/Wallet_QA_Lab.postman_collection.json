@@ -1,0 +1,359 @@
+{
+  "info": {
+    "name": "Wallet QA Lab \u2014 Local Synthetic API",
+    "description": "Test only the local mock wallet API. No real payments, financial networks, or Samsung endpoints. Run npm run dev:api first.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "API-000 Reset synthetic ledger",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/reset",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Reset returns 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API-001 Health check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Healthy and sandbox-only\", () => { pm.response.to.have.status(200); pm.expect(pm.response.json().environment).to.eql(\"sandbox-only\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API-002 Approved $10.01 payment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/payments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"amountCents\": 1001,\n  \"category\": \"food\",\n  \"online\": true,\n  \"authValid\": true,\n  \"cardActive\": true,\n  \"deviceSupported\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"requestId\", \"postman-\" + Date.now());"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"201 approved and 20\u00a2 cashback\", () => { pm.response.to.have.status(201); const data=pm.response.json(); pm.expect(data.code).to.eql(\"APPROVED\"); pm.expect(data.transaction.cashbackCents).to.eql(20); pm.collectionVariables.set(\"transactionId\", data.transaction.id); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API-003 Idempotent duplicate request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/payments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"amountCents\": 1001,\n  \"category\": \"food\",\n  \"online\": true,\n  \"authValid\": true,\n  \"cardActive\": true,\n  \"deviceSupported\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 duplicate and no second charge\", () => { pm.response.to.have.status(200); pm.expect(pm.response.json().duplicate).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API-004 Ledger has exactly one payment",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/transactions"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"One approved payment\", () => { pm.response.to.have.status(200); pm.expect(pm.response.json().transactions.length).to.eql(1); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API-005 Refund the payment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/refunds",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"transactionId\": \"{{transactionId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Cashback reverses\", () => { pm.response.to.have.status(200); pm.expect(pm.response.json().netCashbackCents).to.eql(0); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API-006 Refund retry is idempotent",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/refunds",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"transactionId\": \"{{transactionId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Retry does not re-refund\", () => { pm.response.to.have.status(200); pm.expect(pm.response.json().duplicate).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API-007 Offline declines",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/payments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestId\": \"offline-{{requestId}}\",\n  \"amountCents\": 1001,\n  \"category\": \"food\",\n  \"online\": false,\n  \"authValid\": true,\n  \"cardActive\": true,\n  \"deviceSupported\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Offline 503\", () => { pm.response.to.have.status(503); pm.expect(pm.response.json().code).to.eql(\"OFFLINE\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API-008 Expired auth declines",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/payments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestId\": \"auth-{{requestId}}\",\n  \"amountCents\": 1001,\n  \"category\": \"food\",\n  \"online\": true,\n  \"authValid\": false,\n  \"cardActive\": true,\n  \"deviceSupported\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Auth expired 401\", () => { pm.response.to.have.status(401); pm.expect(pm.response.json().code).to.eql(\"AUTH_EXPIRED\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API-009 Invalid amount declines",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/payments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestId\": \"invalid-{{requestId}}\",\n  \"amountCents\": 0,\n  \"category\": \"food\",\n  \"online\": true,\n  \"authValid\": true,\n  \"cardActive\": true,\n  \"deviceSupported\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Invalid amount 422\", () => { pm.response.to.have.status(422); pm.expect(pm.response.json().code).to.eql(\"INVALID_INPUT\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API-010 Locked demo card declines",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/payments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestId\": \"locked-{{requestId}}\",\n  \"amountCents\": 1001,\n  \"category\": \"food\",\n  \"online\": true,\n  \"authValid\": true,\n  \"cardActive\": false,\n  \"deviceSupported\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Card locked 423\", () => { pm.response.to.have.status(423); pm.expect(pm.response.json().code).to.eql(\"CARD_LOCKED\"); });"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:4300/api/mock"
+    }
+  ]
+}

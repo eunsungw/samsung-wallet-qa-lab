@@ -21,3 +21,10 @@ npm run test:e2e
 - Add API contract tests with a synthetic local endpoint, status codes, timeouts, retries and correlation IDs; no real payment API.
 - Improve the native Kotlin simulator with a deterministic ViewModel and Compose UI tests for network/auth state, maintaining testability.
 - Implement Supabase authenticated QA run storage against a **new sandbox project** with RLS checks and test fixtures. Never use service_role in frontend.
+
+
+## Android QA extension
+
+Read `docs/ANDROID_QA_LAB.md` and `docs/ANDROID_TEST_CASES.md` before changing the Kotlin app, Appium scripts or Postman API fixture. Keep `com.example.walletqalab` clearly independent of Samsung Wallet. The native app currently uses a pure Kotlin in-memory engine; the mock HTTP API is a *separate* localhost contract testing service. Do not quietly claim they are integrated.
+
+Before changing Android, verify Android Gradle Plugin/JDK/Gradle compatibility, run the Kotlin/JVM and connected emulator tests when an Android SDK is available, and report if the environment does not support the SDK. Never mark an unexecuted test passed.
