@@ -10,12 +10,18 @@
     "test": "npm run build && node --test tests/*.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:android": "node tests/appium/wallet.android.mjs"
+    "test:android": "node tests/appium/wallet.android.mjs",
+    "dev:api": "node scripts/mock-api-server.mjs",
+    "test:api": "node --test tests/mock-api.test.mjs",
+    "test:android:native": "node tests/appium/native.wallet.android.mjs",
+    "test:android:web": "node tests/appium/wallet.android.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "typescript": "^5.9.3",
     "webdriverio": "^9.18.0"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
